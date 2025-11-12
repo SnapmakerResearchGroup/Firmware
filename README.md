@@ -16,8 +16,10 @@ SHA256: 8b4296bd7122485100607aa8ce73e60853447d016fa9affa99c1c3e7f67c7421
 # Root
 
 Users password hashes:
+```
 root:$5$eu8wDdiZh8$XX7iyka0CVnr.6rZ2CxA71A/Zuoq3Cz2k1t1WNtevA9:::::::
 lava:$5$qeMHqpDjqkRkD$KcMqymy5Zu1CBhZoXmZX/oxJ4.TAWMF5OXdcNbHmIh6:::::::
+```
 
 Both passwords are `snapmaker`
 
