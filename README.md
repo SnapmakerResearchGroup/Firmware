@@ -12,8 +12,9 @@ RFID reader: FM175XX
 
 # Firmware repository
 
-0.9.0 firmware link: https://public.resource.snapmaker.com/firmware/U1/U1_0.9.0.121_20251106132913_upgrade.bin
-SHA256: 8b4296bd7122485100607aa8ce73e60853447d016fa9affa99c1c3e7f67c7421
+| Version   | URL                                                                                       | SHA256                                                           |
+|-----------|-------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| 0.9.0.121 | https://public.resource.snapmaker.com/firmware/U1/U1_0.9.0.121_20251106132913_upgrade.bin | 8b4296bd7122485100607aa8ce73e60853447d016fa9affa99c1c3e7f67c7421 |
 
 # Root
 
@@ -35,6 +36,38 @@ Debug mode (that enables SSH) is enabled by generating debug file via `custom_mi
 
 You can't modify misc partition via firmware upgrade, so you need to create custom firmware that has access to SSH initially.
 
+## Firmware patching
+
+You have 2 ways to patch firmware:
+
+1. Use [FirmwareRepacker](https://github.com/SnapmakerResearchGroup/FirmwareRepacker)'s `root-patch` command via [Automatic root patch](#Automatic-root-patch)
+2. Do same manually, with ability to change firmware as you like via [DIY firmware patching](#DIY-firmware-patching)
+
+### Automatic root patch
+
+I've implemented automatic SSH server patch into FirmwareRepacker with help of [backhand](https://github.com/SnapmakerResearchGroup/backhand). This method will work on ANY OS!
+
+Downsides are that you won't be able to modify firmware, and it is **YET UNTESTED** on real printer
+
+Download latest binary release of FirmwareRepacker: https://github.com/SnapmakerResearchGroup/FirmwareRepacker/releases/latest
+
+Unpack tar.gz or zip archive
+
+Then run:
+
+Linux/macOS:
+```bash
+snapmaker_firmware_repacker-<your-binary-name> patch-root --input U1_0.9.0.121_20251106132913_upgrade.bin
+```
+
+Windows:
+```cmd
+snapmaker_firmware_repacker-windows-x86_64.exe patch-root --input U1_0.9.0.121_20251106132913_upgrade.bin
+```
+
+Next follow [Installing firmware](#Installing-firmware)
+
+### DIY firmware patching
 You will need 3 tools:
 
 [FirmwareRepacker](https://github.com/SnapmakerResearchGroup/FirmwareRepacker) - (un)packs RockChip firmware from/into Snapmaker U1 firmware upgrade format
@@ -45,9 +78,9 @@ unsquashfs and mksquashfs from squashfs-tools
 
 Only firmware 0.9.0 is tested, other versions are on your own risk!
 
-Guide assumes that you are running Linux on x86_64 with non-root user
+Guide assumes that you are running Linux on x86_64 with non-root user. **This method WON'T work on Windows**
 
-Root is MANDATORY for packing/unpacking SquashFS. You WILL brick your printer if you will nuke uids/gids
+**Root is MANDATORY for packing/unpacking SquashFS. You WILL brick your printer if you will nuke uids/gids**
 
 ```bash
 wget -qO- https://github.com/SnapmakerResearchGroup/FirmwareRepacker/releases/download/v1.0.0/snapmaker_firmware_repacker-linux-x86_64.tar.gz | tar xz
@@ -89,15 +122,27 @@ http (33)
 
 **YOU WILL BRICK PRINTER IF YOU IGNORE THIS**
 
-Update printer to patched.bin (About -> Firmware version -> Local Update). After update, SSH server will start at port 22, access with user `root` and password `snapmaker`
+Also check for hardlinks:
 
-After SSH to printer
+```
+created 494 hardlinks
+```
+
+**If there are none, you did something wrong!**
+
+### Installing firmware
+
+Copy `patched.bin` file to USB drive, connect it to printer
+
+Then update printer (About -> Firmware version -> Local Update -> patched.bin). After update, SSH server will start at port 22, access with user `root` and password `snapmaker`
+
+After SSH to printer run those commands:
 ```shell
 /usr/bin/custom_misc gen-debug
 dd if=debug_misc.img of=/dev/block/by-name/misc bs=1 conv=notrunc
 ```
 
-After reboot debug mode will be enabled, and you will be able to SSH with root/lava user even after firmware upgrade (unless they will change something)
+This will enable debug mode, and you will be able to SSH with root/lava user even after firmware upgrade (unless they will change something)
 
 **Your warranty is now void. I'm not responsible for bricked devices, your house burned down due to thermal runaway or thermonuclear war™.**
 
@@ -132,7 +177,7 @@ Why no prepatched firmware? I don't want to distribute Snapmaker's intellectual 
 
 ![Motherboard](motherboard.webp)
 
-https://androidmtk.com/rockchip-android-tool might be helpful
+https://androidmtk.com/rockchip-android-tool or https://github.com/linux-rockchip/rkflashtool might be helpful
 
 # MQTT
 
@@ -159,4 +204,4 @@ Header is encrypted, hash of each file is checked with MD5. See [FirmwareRepacke
 2. RockChip RKFW. Has 2 files packed: BOOT and embedded-update.img (RKAF image, see 3.)
 3. RockChip RKAF. Has many files packed, most important is rootfs.img, it is SquashFS with OS
 
-For packing RKFW and RKAF you can use fork of [apftool-rs](https://github.com/SnapmakerResearchGroup/apftool-rs)
+For packing RKFW and RKAF you can use [apftool-rs](https://github.com/SnapmakerResearchGroup/apftool-rs)
